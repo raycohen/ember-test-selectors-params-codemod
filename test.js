@@ -17,7 +17,7 @@ describe('transform', () => {
 
   test('mustache with existing args', () => {
     let input = `{{some-component foo data-test-foo 42 @bar baz=qux bla="42"}}`;
-    let expected = `{{some-component foo 42 @bar baz=qux bla="42" data-test-foo=true}}`;
+    let expected = `{{some-component foo 42 @bar data-test-foo=true baz=qux bla="42"}}`;
     expect(transform(input)).toEqual(expected);
   });
 

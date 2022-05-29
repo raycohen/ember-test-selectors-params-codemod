@@ -54,8 +54,12 @@ async function run(argv, cwd) {
 
     let newContent;
     try {
-      transform(root);
-      newContent = recast.print(root);
+      const changed = transform(root);
+      if (changed) {
+        newContent = recast.print(root);
+      } else {
+        newContent = content;
+      }
     } catch (error) {
       bar.interrupt(chalk.red(`Could not transform file ${templatePath}: ${error}`));
       bar.tick();
@@ -77,26 +81,34 @@ async function run(argv, cwd) {
 }
 
 function transform(root) {
+  let changed = false;
   recast.traverse(root, {
     MustacheStatement(node) {
-      transformMustache(node);
+      changed = changed || transformMustache(node);
     },
     BlockStatement(node) {
-      transformMustache(node);
+      changed = changed || transformMustache(node);
     },
   });
+  return changed;
 }
 
 function transformMustache(node) {
-  // add test selectors to `Hash` arguments
-  node.hash.pairs = node.hash.pairs.concat(
-    node.params
+  if (node.params.some(isTestSelectorParam)) {
+    // add test selectors to `Hash` arguments
+    const dataTestPairs = node.params
       .filter(param => isTestSelectorParam(param))
-      .map(path => b.pair(path.original, b.boolean(true)))
-  );
+      .map(path => b.pair(path.original, b.boolean(true)));
 
-  // remove test selectors from positional arguments
-  node.params = node.params.filter(param => !isTestSelectorParam(param));
+    // order data-test-pairs first
+    node.hash.pairs = dataTestPairs.concat(node.hash.pairs);
+
+    // remove test selectors from positional arguments
+    node.params = node.params.filter(param => !isTestSelectorParam(param));
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function isTestSelectorParam(param) {
