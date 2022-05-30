@@ -26,4 +26,12 @@ describe('transform', () => {
     let expected = `{{#some-component data-test-foo=true}}FOO{{/some-component}}`;
     expect(transform(input)).toEqual(expected);
   });
+
+  test.only('with loc', () => {
+    let input = `{{some-component data-test-foo
+      x="yes" y="yes"}}`;
+    let expected = `{{some-component data-test-foo=true
+      x="yes" y="yes"}}`;
+    expect(transform(input)).toEqual(expected);
+  });
 });
